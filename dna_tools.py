@@ -1,9 +1,15 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 """
-This is a basically a simplified version of dna_param.py
+WE ARE STILL PROTING TO PYTHON3!
+This is  a simplified version of dna_param.py
 It does not need VMD, but is easy to use, for instance to change DNA sequence in a structure.
 
 It has one more function, change_dna_seq_in_pdb 
+
+3DNA SHOULD BE INSTALLED AND IN PATH.
+X3DNA ENVIRONMENT VARIABLE SET
+
+CURVES FUNCTIONS IN DEVELOPMENT
 
 """
 import os
@@ -22,19 +28,20 @@ from collections import OrderedDict
 
 __author__="Alexey Shaytan"
 
-TEMP='/Users/alexeyshaytan/junk/tmp2/'
-P_X3DNA_DIR='/Users/alexeyshaytan/soft/x3dna-v2.1'
-P_X3DNA_analyze=P_X3DNA_DIR+'/bin/analyze'
-P_X3DNA_find_pair=P_X3DNA_DIR+'/bin/find_pair'
-P_X3DNA_rebuild=P_X3DNA_DIR+'/bin/rebuild'
-P_X3DNA_x3dna_utils=P_X3DNA_DIR+'/bin/x3dna_utils'
+TEMP='/tmp/dna_tools'
+os.system("mkdir -p %s"%TEMP)
+P_X3DNA_DIR=''
+P_X3DNA_analyze='analyze'
+P_X3DNA_find_pair='find_pair'
+P_X3DNA_rebuild='rebuild'
+P_X3DNA_x3dna_utils='x3dna_utils'
 
 
 P_CURVES='/Users/alexeyshaytan/bin/Cur+'
 P_CURVES_LIB='/Users/alexeyshaytan/soft/curves+/standard'
 
 
-os.environ['X3DNA']=P_X3DNA_DIR
+#os.environ['X3DNA']=P_X3DNA_DIR
 
 def X3DNA_find_pair(DNA_pdb):
 	""" Runs find_pair program from X3DNA and returns a path to unique file with defined pairs
@@ -65,12 +72,13 @@ def X3DNA_find_pair(DNA_pdb):
 	os.system("cp "+DNA_pdb+' '+TEMP+'/'+pdb)
 
 	cmd=P_X3DNA_find_pair+' '+pdb+' '+outf
-	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #print(cmd)
+	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE,universal_newlines=True)
 	# wait for the process to terminate
 	out, err = p.communicate()
-	errcode = p.returncode
-	print('OUT:'+out)
-	print('ERR:'+err)
+	#errcode = p.returncode
+	print("OUT:",out)
+	print("ERR:",err)
 	return(outf)
 
 
@@ -113,15 +121,15 @@ def X3DNA_analyze(DNA_pdb,ref_fp_id):
 	#sed 's/pattern/replacement/g'
 
 	cmd='sed "s/'+ref_fp_id+'/'+cur_fp_id+'/g" '+ref_fp_id+'>'+cur_fp_id+'.fr' #fr - dreived from reference
-	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE,universal_newlines=True)
 	out, err = p.communicate()
-	print('OUT:'+out+err)
+	print('OUT:',out,err)
 	
 	#Now we can run X3DNA_analyze
 	cmd=P_X3DNA_analyze+' '+cur_fp_id+'.fr'
-	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE,universal_newlines=True)
 	out, err = p.communicate()
-	print('OUT:'+out+err)
+	print('OUT:',out,err)
 
 ################################################
 #Extract base pairing, bp centers, bp params, bp step params
@@ -148,7 +156,7 @@ def X3DNA_analyze(DNA_pdb,ref_fp_id):
 	# wait for the process to terminate
 	out, err = p.communicate()
 	errcode = p.returncode
-	print('OUT:'+out+err)
+	print('OUT:',out,err)
 ####################################
 ##Now let's get torsion parameters
 	df_tor=parse_tor_param(TEMP+'/backbone.tor')
@@ -231,14 +239,14 @@ def parse_ref_frames(file):
 	and returns a PANDAS data frame
 
 	"""
-	print "Processing ", file
+	print("Processing ", file)
 	#let's get the data from file
 	# let's strip white spaces at first and replace with tabs
 	tmpfile=file.replace('.dat','.tmp')
 	with open(file,'r') as f:
 		with open(tmpfile,'w') as tf:
-			f.next()
-			f.next()
+			f.readline()
+			f.readline()
 			for line in f:
 				tf.write('\t'.join(line.partition('#')[0].split())+'\n')
 				next(f,'')
@@ -265,7 +273,7 @@ def parse_bases_param(file):
 
 	offest - offset for DNA numbering.
 	"""
-	print "Processing ", file
+	print("Processing ", file)
 	#let's get the data from file
 	# let's strip white spaces at first and replace with tabs
 	tmpfile=file+'tmp'
@@ -313,8 +321,8 @@ def check_pairing(ref,cur):
 		for line in inf:
 			if(re.search('\.\.\.\.>C:\.*(-?\d+)_:',line)):
 				bp_list_ref.append(int(re.search('\.\.\.\.>C:\.*(-?\d+)_:',line).group(1)))
-	print "Reference BP list"
-	print bp_list_ref
+	print("Reference BP list")
+	print(bp_list_ref)
 
 	bp_list_cur=list()
 
@@ -322,8 +330,8 @@ def check_pairing(ref,cur):
 		for line in inf:
 			if(re.search('\.\.\.\.>C:\.*(-?\d+)_:',line)):
 				bp_list_cur.append(int(re.search('\.\.\.\.>C:\.*(-?\d+)_:',line).group(1)))
-	print "Current BP list"
-	print bp_list_cur
+	print("Current BP list")
+	print(bp_list_cur)
 #Let's construct data frame by comparing
 	df_pairing = pd.DataFrame(columns=['Pairing'])
 	for i in range(len(bp_list_ref)):
@@ -363,8 +371,8 @@ def parse_tor_param(file):
 	dfa=pd.read_csv(angfile, sep=u'\t',skiprows=19)
 	dfp=pd.read_csv(puckfile, sep=u'\t',skiprows=18)
 	#Now the idea is to slice this data frames into strands
-	dfa1=dfa.iloc[0:len(dfa)/2,1:]
-	dfa2=dfa.iloc[len(dfa)/2:,1:]
+	dfa1=dfa.iloc[0:int(len(dfa)/2),1:]
+	dfa2=dfa.iloc[int(len(dfa)/2):,1:]
 	n=dfa1.columns
 	n1=[]
 	n2=[]
@@ -377,8 +385,8 @@ def parse_tor_param(file):
 	dfa2.index=range(len(dfa2)-1,-1,-1)
 	dfa_new=pd.concat([dfa1,dfa2],axis=1)
 
-	dfp1=dfp.iloc[0:len(dfp)/2,1:]
-	dfp2=dfp.iloc[len(dfp)/2:,1:]
+	dfp1=dfp.iloc[0:int(len(dfp)/2),1:]
+	dfp2=dfp.iloc[int(len(dfp)/2):,1:]
 	n=dfp1.columns
 	n1=[]
 	n2=[]
@@ -417,7 +425,7 @@ def CURVES_analyze(DNA_pdb,length):
 
 	#Now we can run CURVES+
 	cmd=P_CURVES+' <<!\n &inp file=%s, lis=%s,\n lib=%s\n &end\n2 1 -1 0 0\n1:%d\n%d:%d\n!'%(pdb,pdb,P_CURVES_LIB,length,length*2,length+1)
-	print cmd
+	print(cmd)
 	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
 	print('OUT:'+out+err)
@@ -494,7 +502,7 @@ def parse_lis(file):
 
 def gen_bp_step(data_frame,new_seq=None):
 	"""
-	Generates the bp_step.par file based on a data frame (might be the outpur of X3DNA_analyze or X3DNA_analyze_bp_step)
+	Generates the bp_step.par file based on a data frame (might be the output of X3DNA_analyze or X3DNA_analyze_bp_step)
 	Returns a file name
 
 	Optionally we can place a new sequnce here in new_seq ['A','T',..].
@@ -518,10 +526,10 @@ def gen_bp_step(data_frame,new_seq=None):
 	new_df=new_df.fillna(0.0)
 
 
-	f=open(full_path+'tmp','wb')
+	f=open(full_path+'tmp','w')
 	# f=open(par,'w')
 
-	f.write(' %d # base-pairs\n'%len(new_df.index))
+	f.write(" %d # base-pairs\n"%len(new_df.index))
 	f.write('   0 # ***local base-pair & step parameters***\n')
 	f.write('#        Shear    Stretch   Stagger   Buckle   Prop-Tw   Opening     Shift     Slide     Rise      Tilt      Roll      Twist\n')
 	# new_df.to_string(f,index=False,na_rep='0.000',float_format='{:>10.3f}'.format)
@@ -547,12 +555,12 @@ def build_dna(data_frame,pdbfile,new_seq=None):
 	cmd=P_X3DNA_x3dna_utils+' cp_std BDNA'
 	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
-	print('OUT:'+out+err)
+	print('OUT:',out,err)
 
 	cmd=P_X3DNA_rebuild+' -atomic '+par_fname+' '+par_fname+'.pdb'
 	p = subprocess.Popen(cmd,shell=True,cwd=TEMP,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
-	print('OUT:'+out+err)
+	print('OUT:',out,err)
 
 	os.system('mv '+par_fname+'.pdb '+pdbfile)
 
@@ -568,7 +576,7 @@ def change_dna_seq_in_pdb(DNA_pdb,NEW_pdb,new_seq):
 	
 
 if __name__ == '__main__':
-	print "Kuku"
+	print("Kuku")
 	X3DNA_find_pair('x')
 	help(atomsel)
 

@@ -1,4 +1,7 @@
 # DNA_tools
+
+This is superseeded by a python package DNAtools intbio/DNAtools
+
 Tools to analyse and manipulate DNA conformation
 
 - 3DNA should be installed
